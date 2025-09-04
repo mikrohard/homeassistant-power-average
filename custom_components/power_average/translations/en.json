@@ -1,0 +1,40 @@
+{
+  "title": "Power Average Calculator",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Power Average Calculator",
+        "description": "Select the current and voltage entities for each phase. Current values will be treated as 0 when negative (export).",
+        "data": {
+          "name": "Name",
+          "current_l1": "Phase L1 Current Sensor",
+          "current_l2": "Phase L2 Current Sensor",
+          "current_l3": "Phase L3 Current Sensor",
+          "voltage_l1": "Phase L1 Voltage Sensor",
+          "voltage_l2": "Phase L2 Voltage Sensor",
+          "voltage_l3": "Phase L3 Voltage Sensor"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Power Average Calculator",
+        "description": "Update the current and voltage entities for each phase.",
+        "data": {
+          "name": "Name",
+          "current_l1": "Phase L1 Current Sensor",
+          "current_l2": "Phase L2 Current Sensor",
+          "current_l3": "Phase L3 Current Sensor",
+          "voltage_l1": "Phase L1 Voltage Sensor",
+          "voltage_l2": "Phase L2 Voltage Sensor",
+          "voltage_l3": "Phase L3 Voltage Sensor"
+        }
+      }
+    }
+  }
+}

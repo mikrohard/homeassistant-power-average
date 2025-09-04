@@ -1,0 +1,11 @@
+{
+  "domain": "power_average",
+  "name": "Power Average Calculator",
+  "codeowners": ["@mikrohard"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/mikrohard/homeassistant-power-average",
+  "iot_class": "calculated",
+  "requirements": [],
+  "version": "1.0.0"
+}
