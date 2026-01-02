@@ -14,6 +14,13 @@
           "voltage_l2": "Phase L2 Voltage Sensor",
           "voltage_l3": "Phase L3 Voltage Sensor"
         }
+      },
+      "power_targets": {
+        "title": "Power Targets (Optional)",
+        "description": "Add power targets in Watts to create estimated window sensors. Each target will create a sensor that estimates what the completed window average would be if that power is added for the remainder of the window.",
+        "data": {
+          "power_targets": "Power Targets (Watts)"
+        }
       }
     },
     "abort": {
@@ -26,13 +33,19 @@
         "title": "Configure Power Average Calculator",
         "description": "Update the current and voltage entities for each phase.",
         "data": {
-          "name": "Name",
           "current_l1": "Phase L1 Current Sensor",
           "current_l2": "Phase L2 Current Sensor",
           "current_l3": "Phase L3 Current Sensor",
           "voltage_l1": "Phase L1 Voltage Sensor",
           "voltage_l2": "Phase L2 Voltage Sensor",
           "voltage_l3": "Phase L3 Voltage Sensor"
+        }
+      },
+      "power_targets": {
+        "title": "Power Targets (Optional)",
+        "description": "Add power targets in Watts to create estimated window sensors. Each target will create a sensor that estimates what the completed window average would be if that power is added for the remainder of the window.",
+        "data": {
+          "power_targets": "Power Targets (Watts)"
         }
       }
     }

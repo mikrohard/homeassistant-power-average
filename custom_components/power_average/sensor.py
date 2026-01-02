@@ -30,13 +30,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up Power Average Calculator sensor."""
     data = hass.data[DOMAIN][config_entry.entry_id]
-    
+
     sensors = []
-    
+    name = data.get("name", "Power Average")
+
     power_sensor = PowerAverageSensor(
         hass,
         config_entry.entry_id,
-        data.get("name", "Power Average"),
+        name,
         data.get("current_l1"),
         data.get("current_l2"),
         data.get("current_l3"),
@@ -44,19 +45,30 @@ async def async_setup_entry(
         data.get("voltage_l2"),
         data.get("voltage_l3"),
     )
-    
+
     completed_window_sensor = CompletedWindowPowerSensor(
         hass,
         config_entry.entry_id,
-        data.get("name", "Power Average"),
+        name,
         power_sensor,
     )
-    
+
     power_sensor.set_completed_window_sensor(completed_window_sensor)
-    
+
     sensors.append(power_sensor)
     sensors.append(completed_window_sensor)
-    
+
+    power_targets = data.get("power_targets", [])
+    for power_target in power_targets:
+        estimated_sensor = EstimatedWindowPowerSensor(
+            hass,
+            config_entry.entry_id,
+            name,
+            power_target,
+            power_sensor,
+        )
+        sensors.append(estimated_sensor)
+
     async_add_entities(sensors)
 
 
@@ -340,4 +352,110 @@ class CompletedWindowPowerSensor(SensorEntity):
             "l2_average_power": window_data["l2_average_power"],
             "l3_average_power": window_data["l3_average_power"],
         }
+        self.async_write_ha_state()
+
+
+class EstimatedWindowPowerSensor(SensorEntity):
+    """Sensor that estimates the completed window average with additional power target.
+
+    This sensor calculates what the final 15-minute window average would be if
+    a specific power target is added for the remainder of the current window.
+    It assumes the current average power stays constant and adds the power target
+    to estimate the final window average.
+    """
+
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry_id: str,
+        name: str,
+        power_target: int,
+        power_sensor: PowerAverageSensor,
+    ) -> None:
+        """Initialize the sensor."""
+        self.hass = hass
+        self._entry_id = entry_id
+        self._power_target = power_target
+        self._attr_name = f"{name} Estimated +{power_target}W"
+        self._attr_unique_id = f"{entry_id}_estimated_{power_target}w"
+        self._power_sensor = power_sensor
+
+        self._attr_native_value = None
+        self._attr_extra_state_attributes = {}
+
+        self._unsubscribe_interval = None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name="Power Average Calculator",
+            manufacturer="Custom",
+            model="Power Average",
+            sw_version="1.0.0",
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Handle entity which will be added."""
+        await super().async_added_to_hass()
+
+        self._unsubscribe_interval = async_track_time_interval(
+            self.hass,
+            self._update_estimate,
+            timedelta(seconds=10)
+        )
+
+        self._update_estimate(None)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Handle entity removal."""
+        if self._unsubscribe_interval:
+            self._unsubscribe_interval()
+
+    @callback
+    def _update_estimate(self, time) -> None:
+        """Calculate and update the estimated window average with power target."""
+        now = dt_util.now()
+
+        window_start = self._power_sensor._window_start
+        if window_start is None:
+            self._attr_native_value = None
+            self._attr_extra_state_attributes = {}
+            self.async_write_ha_state()
+            return
+
+        window_duration_total = 15 * 60
+        elapsed_seconds = (now - window_start).total_seconds()
+        elapsed_seconds = max(0, min(elapsed_seconds, window_duration_total))
+        remaining_seconds = window_duration_total - elapsed_seconds
+
+        current_avg = self._power_sensor._attr_native_value
+        if current_avg is None:
+            current_avg = 0
+
+        target_power = current_avg + self._power_target
+
+        if elapsed_seconds > 0:
+            estimated_avg = (
+                (current_avg * elapsed_seconds) + (target_power * remaining_seconds)
+            ) / window_duration_total
+        else:
+            estimated_avg = target_power
+
+        self._attr_native_value = round(estimated_avg, 2)
+
+        self._attr_extra_state_attributes = {
+            "power_target": self._power_target,
+            "current_window_average": current_avg,
+            "window_start": window_start.isoformat(),
+            "elapsed_seconds": round(elapsed_seconds, 1),
+            "remaining_seconds": round(remaining_seconds, 1),
+            "target_power_for_remainder": target_power,
+        }
+
         self.async_write_ha_state()
