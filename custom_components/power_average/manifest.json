@@ -7,5 +7,5 @@
   "documentation": "https://github.com/mikrohard/homeassistant-power-average",
   "iot_class": "calculated",
   "requirements": [],
-  "version": "1.0.0"
+  "version": "1.0.1"
 }
